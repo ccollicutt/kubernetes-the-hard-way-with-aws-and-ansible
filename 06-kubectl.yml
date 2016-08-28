@@ -1,0 +1,19 @@
+---
+
+- hosts: tag_krole_util
+  vars_files:
+    - vars/all.yml
+  tasks:
+    - include: common-kubernetes.yml
+
+    - include: common-kubectl.yml
+
+    - name: ensure user has a .kube directory
+      file:
+        path: "/home/ubuntu/.kube"
+        state: "directory"
+
+    - name: install kubectl config file from template
+      template:
+        src: "templates/kubectl-config"
+        dest: "/home/ubuntu/.kube/config"

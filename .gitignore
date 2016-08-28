@@ -1,0 +1,6 @@
+fetched/*
+*.swo
+*.swp
+ssh_config
+venv2
+vars/all.yml

@@ -1,0 +1,20 @@
+---
+
+# FIXME: This is just running shell commands.
+- hosts: tag_krole_controller[0]
+  tasks:
+     - name: create nginx things 
+       shell: kubectl run nginx --image=nginx --port=80 --replicas=3
+
+     - name: check nginx things
+       shell: kubectl get pods -o wide | grep nginx
+
+     - name: export nginx port
+       shell: kubectl expose deployment nginx --type NodePort --type=LoadBalancer
+
+     - name: get nginx port
+       shell: kubectl get svc nginx --output=jsonpath='{range .spec.ports[0]}{.nodePort}'
+       register: node_port
+   
+     - set_fact: 
+         node_port: "{{ node_port.stdout }}"

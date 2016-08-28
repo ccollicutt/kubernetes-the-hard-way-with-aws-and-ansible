@@ -1,0 +1,33 @@
+{% macro cluster_hosts() %}
+{%- for host in groups['tag_krole_etcd'] -%} 
+{{ host }}=https://{{ hostvars[host].ansible_default_ipv4.address }}:2380{% if not loop.last %},{% endif %}
+{%- endfor -%} 
+{% endmacro %}
+#v7
+[Unit]
+Description=etcd
+Documentation=https://github.com/coreos
+
+[Service]
+ExecStart=/usr/bin/etcd --name {{ inventory_hostname }} \
+  --cert-file=/etc/etcd/kubernetes.pem \
+  --key-file=/etc/etcd/kubernetes-key.pem \
+  --peer-cert-file=/etc/etcd/kubernetes.pem \
+  --peer-key-file=/etc/etcd/kubernetes-key.pem \
+  --trusted-ca-file=/etc/etcd/ca.pem \
+  --peer-trusted-ca-file=/etc/etcd/ca.pem \
+  --initial-advertise-peer-urls https://{{ ansible_default_ipv4.address }}:2380 \
+  --listen-peer-urls https://{{ ansible_default_ipv4.address }}:2380 \
+  --listen-client-urls https://{{ ansible_default_ipv4.address }}:2379,http://127.0.0.1:2379 \
+  --advertise-client-urls https://{{ ansible_default_ipv4.address }}:2379 \
+  --initial-cluster-token etcd-cluster-0 \
+  --initial-cluster {{ cluster_hosts() }} \
+  --initial-cluster-state new \
+  --heartbeat-interval 250 \
+  --election-timeout 1250 \
+  --data-dir=/var/lib/etcd
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

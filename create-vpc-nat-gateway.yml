@@ -1,0 +1,13 @@
+---
+
+- name: create nat gateway on public subnet
+  ec2_vpc_nat_gateway:
+    subnet_id: "{{ vpc_public_subnet_id }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    if_exist_do_not_create: True
+    wait: yes 
+    wait_timeout: 600 
+  register: vpc_nat_gateway
+

@@ -1,0 +1,58 @@
+---
+
+- hosts: localhost 
+  connection: local
+  vars_files:
+    - vars/all.yml
+  tasks:
+  
+    - name: create an AWS VPC for use with kubernetes
+      ec2_vpc:
+        state: present
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        region: "{{ aws_region }}"
+        cidr_block: "{{ vpc_network_cidr }}"
+        resource_tags: { "Name" : "kubernetes" }
+        internet_gateway: True
+        wait: True
+        subnets:
+          - cidr: "{{ vpc_public_subnet_cidr }}" 
+            az: "{{ vpc_subnet_az }}"
+            resource_tags: { "Name" : "{{ vpc_public_subnet_name }}" }
+          - cidr: "{{ vpc_private_subnet_cidr }}" 
+            az: "{{ vpc_subnet_az }}"
+            resource_tags: { "Name" : "{{ vpc_private_subnet_name }}" }
+        route_tables:
+          - subnets:
+              - "{{ vpc_public_subnet_cidr }}" 
+            routes:
+              - dest: 0.0.0.0/0
+                gw: igw
+
+    # Get information on VPC networks/subnets/etc
+    - include: vpc-facts.yml
+
+    - include: create-vpc-nat-gateway.yml
+
+    - debug:
+        var: vpc_nat_gateway
+        verbosity: 2
+
+    - name: set default gateway for private subnet to nat gateway instance
+      ec2_vpc_route_table:
+        vpc_id: "{{ vpc_network_id }}" 
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        region: "{{ aws_region }}"
+        subnets:
+          - "{{ vpc_private_subnet_id }}"
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ vpc_nat_gateway.nat_gateway_id }}"
+            instance_id: "{{ vpc_nat_gateway.nat_gateway_id }}"
+      register: vpc_nat_route_table
+
+    - debug:
+        var: vpc_nat_route_table
+        verbosity: 2

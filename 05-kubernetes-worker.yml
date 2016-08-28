@@ -1,0 +1,107 @@
+---
+
+# Just get setup information for controllers
+- hosts: tag_krole_controller
+
+- hosts: tag_krole_worker
+  vars:
+    docker_binary: "https://get.docker.com/builds/Linux/x86_64/docker-1.11.2.tgz"
+    cni_tar: "https://storage.googleapis.com/kubernetes-release/network-plugins/cni-c864f0e1ea73719b8f4582402b0847064f9883b0.tar.gz"
+    k8s_worker_binaries:
+      - "https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kubectl"
+      - "https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kube-proxy"
+      - "https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kubelet"
+  tasks:
+
+    - include: common-kubernetes.yml
+
+    #
+    # Docker
+    #
+
+    - name: download docker tar file
+      get_url: 
+        url: "{{ docker_binary }}"
+        dest: "/home/ubuntu/{{ docker_binary | basename }}"
+
+    - name: unarchive docker tar file
+      unarchive:
+        src: "/home/ubuntu/{{ docker_binary | basename }}"
+        dest: "/home/ubuntu/"
+        copy: False
+ 
+    - name: copy docker binary to /usr/bin
+      shell: cp docker/docker* /usr/bin
+      args:
+        chdir: "/home/ubuntu"
+        creates: "/usr/bin/docker"
+
+    - name: install docker.service file
+      template:
+        src: "docker.service"
+        dest: "/etc/systemd/system/"
+      
+    - name: enable and start docker
+      shell: systemctl {{ item }}
+      with_items:
+        - "daemon-reload"
+        - "enable docker"
+        - "start docker"
+
+    - name: check docker version
+      shell: docker version
+
+
+    #
+    # kubelet
+    #
+ 
+    - name: ensure /opt/cni exists
+      file:
+        path: "/opt/cni"
+        state: "directory"
+
+    - name: download cni tar file
+      get_url: 
+        url: "{{ cni_tar }}"
+        dest: "/home/ubuntu/"
+        
+    - name: unarchive cni tar file
+      unarchive:
+        src: "/home/ubuntu/{{ cni_tar | basename }}"
+        dest: "/opt/cni"
+        copy: False
+
+    - name: download and install k8s worker binaries
+      get_url:
+        url: "{{ item }}"
+        dest: "/usr/bin/"
+        mode: "0755"
+      with_items: "{{ k8s_worker_binaries }}"
+
+    - name: ensure /var/lib/kubelet exists
+      file:
+        path: "/var/lib/kubelet"
+        state: "directory"
+
+    - name: install /var/lib/kubelet/kubeconfig from template
+      template:
+        src: "kubeconfig"
+        dest: "/var/lib/kubelet/kubeconfig"
+
+    - name: install the kubelet and kub-proxy service files
+      template:
+        src: "{{ item }}"
+        dest: "/etc/systemd/system/{{ item }}"
+      with_items:
+        - "kubelet.service"
+        - "kube-proxy.service"
+
+    - name: systemctl daemon-reload
+      shell: systemctl daemon-reload
+
+    - name: restart services
+      shell: systemctl {{ item[0] }} {{ item[1] }}
+      with_nested:
+        - [ "enable", "start" ]
+        - [ "kubelet", "kube-proxy" ] 

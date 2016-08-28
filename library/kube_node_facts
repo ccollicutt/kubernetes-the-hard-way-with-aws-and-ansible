@@ -1,0 +1,11 @@
+#!/bin/bash
+
+nodes=`kubectl get nodes --output=json`
+
+cat <<EOF
+{
+   "ansible_facts" : {
+      "kube_nodes" : $nodes 
+   }
+}
+EOF

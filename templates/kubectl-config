@@ -1,0 +1,19 @@
+apiVersion: v1
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: https://k8s-api-lb-2092673706.us-east-1.elb.amazonaws.com
+  name: kubernetes-the-hard-way
+contexts:
+- context:
+    cluster: kubernetes-the-hard-way
+    user: admin
+  name: default-context
+current-context: default-context
+kind: Config
+preferences: {}
+users:
+- name: admin
+  user:
+    token: chAng3m3
+

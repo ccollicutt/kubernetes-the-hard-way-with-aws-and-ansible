@@ -1,0 +1,23 @@
+{
+  "CN": "kubernetes",
+  "hosts": [
+{# NOTE: it seems the names of the hosts are their ips in this case #}
+{% for host in groups['tag_krole_controller'] | union(groups['tag_krole_worker']) | union(groups['tag_krole_etcd']) %}
+    "{{ hostvars[host].ansible_default_ipv4.address }}"{% if not loop.last %},{% endif %}
+
+{% endfor %}
+  ],
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "CA",
+      "L": "Edmonton",
+      "O": "Kubernetes",
+      "OU": "AB",
+      "ST": "Alberta"
+    }
+  ]
+}

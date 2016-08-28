@@ -1,0 +1,15 @@
+---
+
+- name: ensure k8s kubernetes controllers directories exist
+  file:
+    path: "/var/lib/kubernetes"
+    state: "directory"
+
+- name: ensure certificates and keys are installed
+  copy:
+    src: "fetched/{{ item }}"
+    dest: "/var/lib/kubernetes/{{ item }}"
+  with_items:
+    - ca.pem 
+    - kubernetes-key.pem 
+    - kubernetes.pem

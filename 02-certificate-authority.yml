@@ -1,0 +1,82 @@
+---
+
+# Need setup information for templates used later on
+- hosts:
+    - tag_krole_controller
+    - tag_krole_etcd
+    - tag_krole_worker
+  tasks:
+ 
+    # NOTE: This is not in the k8s the hard way example but it's needed afaik
+    # FIXME: This should probably be done somewhere else
+    - name: configure /etc/hosts
+      lineinfile: 
+        dest: "/etc/hosts"
+        regexp: '.*{{ item }}$' 
+        line: "{{ hostvars[item].ansible_default_ipv4.address }} {{ item }}" 
+        state: present
+      when: hostvars[item].ansible_default_ipv4.address is defined
+      with_items: "{{ groups['all'] }}"
+
+#
+# Note that we just run this on the first controller.
+#
+
+- hosts: tag_krole_controller[0]
+  tasks:
+
+    - name: install cfssl binaries
+      get_url:
+        url: "https://pkg.cfssl.org/R1.2/{{ item.binary }}"
+        dest: "/usr/local/bin/{{ item.name }}"
+        mode: 0755
+      with_items:
+        - { binary: cfssl_linux-amd64, name: cfssl }
+        - { binary: cfssljson_linux-amd64, name: cfssljson }
+    
+    - name: install cfssl configuration files 
+      copy:
+        src: "{{ item }}"
+        dest: "/home/ubuntu/{{ item }}"
+      with_items:
+        - ca-config.json
+        - ca-csr.json 
+
+    - name: generate the CA certificate and private key
+      shell: cfssl gencert -initca ca-csr.json | cfssljson -bare ca
+      args:
+        chdir: /home/ubuntu
+        creates: /home/ubuntu/ca.pem
+
+    - name: verify CA certificate
+      shell: openssl x509 -in ca.pem -text -noout
+      changed_when: False
+
+    - name: install kubernetes-csr.json from template
+      template:
+        src: "kubernetes-csr.json"
+        dest: "/home/ubuntu/kubernetes-csr.json"
+      tags:
+        - csr
+     
+    - name: generate the Kubernetes certificate and private key
+      shell: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kubernetes-csr.json | cfssljson -bare kubernetes 
+      args:
+        chdir: "/home/ubuntu"
+        creates: "kubernetes.pem"
+
+    - name: verify kubernetes.pem
+      shell: openssl x509 -in kubernetes.pem -text -noout
+      changed_when: False
+
+    - name: fetch required certificates
+      fetch:
+        flat: True
+        dest: "fetched/"
+        src: "/home/ubuntu/{{ item }}"
+      with_items:
+        - ca.pem 
+        - kubernetes-key.pem 
+        - kubernetes.pem
+      tags:
+        - fetch

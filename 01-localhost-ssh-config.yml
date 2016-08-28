@@ -1,0 +1,13 @@
+- hosts: all
+  become: False
+  gather_facts: False
+
+- hosts: localhost
+  become: False
+  connection: local
+  tasks:
+    - name: setup an ssh_config file
+      template:
+        src: "templates/ssh_config"
+        dest: "{{ ansible_env.PWD }}/ssh_config"
+

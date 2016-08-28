@@ -1,0 +1,55 @@
+---
+
+- hosts: localhost
+  connection: local
+  become: False
+  gather_facts: False
+  vars_files:
+    - vars/all.yml
+  tasks:
+
+    - include: vpc-facts.yml
+    
+    # These go in the public subnet
+    - name: provision kubernetes publically available virtual machines in AWS
+      ec2:
+        region: "{{ aws_region }}"
+        key_name: "{{ key_name }}"
+        instance_type: "{{ instance_type }}"
+        image: "{{ image }}"
+        wait: True 
+        vpc_subnet_id: "{{ vpc_public_subnet_id }}"
+        assign_public_ip: "{{ item.public_ip }}"
+        user_data: "{{ lookup('template', 'templates/user-data') }}"
+        #FIXME: eventually use a minion role as well, or better limit roles/policies
+        source_dest_check: "{{ item.source_dest_check }}"
+        group: 
+          - "default"
+          - "{{ vpc_security_group_name }}"
+        instance_tags:
+          krole: "{{ item.krole }}"
+          Name: "{{ item.krole }}{{ item.index }}"
+      with_items: "{{ k8s_instances }}"
+      when: "item.public_ip == True"
+
+    # These go in the private subnet
+    - name: provision kubernetes private virtual machines in AWS
+      ec2:
+        region: "{{ aws_region }}"
+        key_name: "{{ key_name }}"
+        instance_type: "{{ instance_type }}"
+        image: "{{ image }}"
+        wait: True 
+        vpc_subnet_id: "{{ vpc_private_subnet_id }}"
+        assign_public_ip: "{{ item.public_ip }}"
+        user_data: "{{ lookup('template', 'templates/user-data') }}"
+        #FIXME: eventually use a minion role as well, or better limit roles/policies
+        source_dest_check: "{{ item.source_dest_check }}"
+        group: 
+          - "default"
+          - "{{ vpc_security_group_name }}"
+        instance_tags:
+          krole: "{{ item.krole }}"
+          Name: "{{ item.krole }}{{ item.index }}"
+      with_items: "{{ k8s_instances }}"
+      when: "item.public_ip == False"

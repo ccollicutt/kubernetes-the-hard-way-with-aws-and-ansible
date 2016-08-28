@@ -1,0 +1,52 @@
+---
+
+instance_type: "c3.large"
+key_name: "your-ec2-key-name"
+# Ubuntu 16.04 Xenial in us-east-1, change if you want or are using another region
+image: "ami-cf68e0d8"
+
+# 
+# Subnets
+# 
+
+vpc_public_subnet_name: "k8s-public"
+vpc_public_subnet_cidr: "172.20.0.0/24"
+vpc_private_subnet_name: "k8s-private"
+vpc_private_subnet_cidr: "172.20.1.0/24"
+
+#
+# VPC
+#
+
+vpc_network_name: "kubernetes"
+vpc_network_cidr: "172.20.0.0/16"
+vpc_subnet_az: "us-east-1c"
+vpc_security_group_name: "allow_k8s"
+
+#
+# Credentials
+#
+
+aws_access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+aws_secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+aws_region: "{{ lookup('env','AWS_REGION') }}"
+
+#
+# Instances
+#
+
+# NOTE: NAT instances, or any instance that has other IPs associated, has to have
+#       source_dest_check set to false. This is a bit of a pain.
+
+k8s_instances:
+  - { index: 0, krole: "util", public_ip: True, source_dest_check: True }
+  - { index: 0, krole: "controller", public_ip: False, source_dest_check: True  }
+  - { index: 1, krole: "controller", public_ip: False, source_dest_check: True  }
+  - { index: 2, krole: "controller", public_ip: False, source_dest_check: True  }
+  - { index: 0, krole: "etcd", public_ip: False, source_dest_check: True  }
+  - { index: 1, krole: "etcd", public_ip: False, source_dest_check: True  }
+  - { index: 2, krole: "etcd", public_ip: False, source_dest_check: True  }
+  - { index: 0, krole: "worker", public_ip: False, source_dest_check: False }
+  - { index: 1, krole: "worker", public_ip: False, source_dest_check: False }
+  - { index: 2, krole: "worker", public_ip: False, source_dest_check: False }
+

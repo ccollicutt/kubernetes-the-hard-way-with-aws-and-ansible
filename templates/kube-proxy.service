@@ -1,0 +1,18 @@
+{# FIXME: use the first controller as primary here #}
+{% set kube_primary = hostvars[groups['tag_krole_controller'][0]].ansible_default_ipv4.address %}
+[Unit]
+Description=Kubernetes Kube Proxy
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+
+[Service]
+ExecStart=/usr/bin/kube-proxy \
+  --master=https://{{ kube_primary }}:6443 \
+  --kubeconfig=/var/lib/kubelet/kubeconfig \
+  --proxy-mode=iptables \
+  --v=2
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

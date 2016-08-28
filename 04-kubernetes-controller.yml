@@ -1,0 +1,65 @@
+---
+
+# Just need setup information from etcd cluster
+- hosts: tag_krole_etcd
+
+# Setup all configuration files
+- hosts: tag_krole_controller
+  vars:
+    k8s_binaries:
+      - "https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kube-apiserver"
+      - "https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kube-controller-manager"
+      - "https://storage.googleapis.com/kubernetes-release/release/v1.3.0/bin/linux/amd64/kube-scheduler"
+    k8s_config:
+      - "https://raw.githubusercontent.com/kelseyhightower/kubernetes-the-hard-way/master/token.csv"
+      - "https://raw.githubusercontent.com/kelseyhightower/kubernetes-the-hard-way/master/authorization-policy.jsonl"
+  tasks:
+
+    - include: common-kubernetes.yml
+
+    # Because kubectl is also installed on util node
+    - include: common-kubectl.yml
+
+    - name: download and install k8s binaries
+      get_url:
+        url: "{{ item }}"
+        dest: "/usr/bin/"
+        mode: "0755"
+      with_items: "{{ k8s_binaries }}"
+    
+    - name: download and install k8s config
+      get_url:
+        url: "{{ item }}"
+        dest: "/var/lib/kubernetes/"
+        mode: "0644"
+      with_items: "{{ k8s_config }}"
+
+    - name: install systemd service files
+      template:
+        src: "{{ item }}"
+        dest: "/etc/systemd/system/{{ item }}" 
+      with_items:
+        - kube-apiserver.service
+        - kube-controller-manager.service
+        - kube-scheduler.service
+
+# Now restart everything serially
+- hosts: tag_krole_controller
+  serial: 1
+  tasks:
+
+    - name: systemctl daemon-reload
+      shell: systemctl daemon-reload
+
+    - name: restart services
+      shell: systemctl {{ item[0] }} {{ item[1] }}
+      with_nested:
+        - [ "enable", "start" ]
+        - [ "kube-apiserver", "kube-controller-manager", "kube-scheduler" ] 
+
+# Check cluster status from one node
+- hosts: tag_krole_controller[0]
+  tasks:
+    - name: check cluster health
+      shell: kubectl get componentstatuses | grep Healthy
+      changed_when: False

@@ -1,0 +1,131 @@
+---
+
+#
+# Main VPC
+#
+
+- ec2_vpc_net_facts:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    filters:
+      "tag:Name": "{{ vpc_network_name }}"
+  register: vpc_network_facts
+
+- debug:
+    var: vpc_network_facts
+    verbosity: 2
+
+- set_fact:
+    vpc_network_id: "{{ vpc_network_facts.vpcs[0].id }}"
+
+#
+# Subnets
+#
+
+- ec2_vpc_subnet_facts:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    filters:
+      vpc-id: "{{ vpc_network_id }}" 
+      "tag:Name": "{{ vpc_public_subnet_name }}"
+  register: vpc_public_subnet_facts
+
+- debug:
+    var: vpc_public_subnet_facts
+    verbosity: 2
+
+- ec2_vpc_subnet_facts:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    filters:
+      vpc-id: "{{ vpc_network_id }}" 
+      "tag:Name": "{{ vpc_private_subnet_name }}"
+  register: vpc_private_subnet_facts
+
+- debug:
+    var: vpc_private_subnet_facts
+    verbosity: 2
+
+- debug:
+    var: vpc_public_subnet_facts.subnets[0].id
+    verbosity: 2
+
+- debug:
+    var: vpc_private_subnet_facts.subnets[0].id
+    verbosity: 2
+
+- set_fact:
+    vpc_private_subnet_id: "{{ vpc_private_subnet_facts.subnets[0].id }}"
+
+- set_fact:
+    vpc_public_subnet_id: "{{ vpc_public_subnet_facts.subnets[0].id }}"
+
+#
+# Security Groups
+#
+
+# FIXME: This will remove the default allow all traffic inbound for some reason?
+# Get the default security group id b/c the api load balancer needs it
+- name: get default security group facts 
+  ec2_group:
+    name: "default"
+    description: "default VPC security group"
+    vpc_id: "{{ vpc_network_id }}"
+    region: "{{ aws_region }}" 
+    ec2_access_key: "{{ aws_access_key }}"
+    ec2_secret_key: "{{ aws_secret_key }}"
+    rules:
+      - proto: all
+        from_port: -1
+        to_port: -1
+        group_name: "default"
+
+  register: ec2_group_default
+
+- set_fact:
+    vpc_default_security_group_id: "{{ ec2_group_default.group_id }}" 
+
+- debug:
+    var: vpc_default_security_group_id
+    verbosity: 2
+
+# NOTE: Unfortunately there does not seem to be an ec2_group_facts
+# module, so this will actually create the rule if it doesn't exist
+# as opposed to just getting information. But we need the group_id
+# when creating instances.
+- name: setup k8s ec2 security group and rules
+  ec2_group:
+    name: "{{ vpc_security_group_name }}" 
+    description: "allow rules for k8s"
+    vpc_id: "{{ vpc_network_id }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    rules:
+      # Allow ssh to util node
+      - proto: tcp 
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      # 443 to k8s api loadbalancer
+      # FIXME: This should probably be a separate rule...
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 0.0.0.0/0
+      # ping for util node
+      - proto: icmp
+        from_port: -1
+        to_port: -1
+        cidr_ip: 0.0.0.0/0
+  register: ec2_group_k8s_allow 
+
+- debug:
+    var: ec2_group_k8s_allow 
+    verbosity: 2
+
+- set_fact:
+    vpc_security_group_id: "{{ ec2_group_k8s_allow.group_id }}"

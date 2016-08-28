@@ -1,0 +1,79 @@
+---
+
+- hosts: tag_krole_etcd
+  vars:
+    - etcd_url: "https://github.com/coreos/etcd/releases/download/v3.0.1/etcd-v3.0.1-linux-amd64.tar.gz"
+  tasks:
+    - name: ensure required etcd directories exist
+      file:
+        state: "directory"
+        path: "{{ item }}"
+      with_items:
+        - "/etc/etcd"
+        - "/var/lib/etcd"
+
+    - name: ensure certificates are installed in /etc/etcd
+      copy:
+        src: "fetched/{{ item }}"
+        dest: "/etc/etcd/{{ item }}"
+      with_items:
+        - ca.pem
+        - kubernetes-key.pem 
+        - kubernetes.pem
+     
+    - name: download etcd release binary
+      get_url:
+        url: "{{ etcd_url }}"
+        dest: "/home/ubuntu/"
+
+    - name: untar etcd release
+      unarchive:
+        src: "/home/ubuntu/{{ etcd_url | basename }}"
+        dest: "/home/ubuntu/"
+        copy: False
+
+    - name: copy etcd binary to /usr/bin
+      shell: cp /home/ubuntu/etcd*/etcd* /usr/bin
+      args:
+        creates: /usr/bin/etcd
+
+    - name: install etcd.service configuration file
+      template:
+        src: "etcd.service"
+        dest: "/etc/systemd/system/"
+
+#
+# Now that etcd is configured, start it up one at a time
+#
+- hosts: tag_krole_etcd
+  serial: 1
+  tasks:
+
+    - name: ensure etcd is stopped
+      service:
+        name: "etcd"
+        state: "stopped"
+    
+    - name: reload etcd
+      shell: systemctl {{ item }}
+      with_items:
+        - "daemon-reload"
+        - "enable etcd"
+        - "restart etcd"
+
+    - name: wait for etcd to be listening on 2380
+      wait_for: 
+        port: 2380
+        host: "{{ ansible_default_ipv4.address }}"
+        delay: 10
+      tags:
+        - systemd
+
+- hosts: tag_krole_etcd[0]
+  tasks:
+
+    - name: verify cluster health
+      shell: etcdctl --ca-file=/etc/etcd/ca.pem cluster-health | grep "cluster is healthy"
+      changed_when: False
+      tags:
+        - systemd

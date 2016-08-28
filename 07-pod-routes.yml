@@ -1,0 +1,68 @@
+---
+
+#FIXME: Do I need this?
+- hosts: localhost
+  connection: local
+  vars_files: 
+    - vars/all.yml
+  tasks:
+
+    # Need the nat gateway id!
+    - include: vpc-facts.yml
+    - include: create-vpc-nat-gateway.yml
+
+- hosts: tag_krole_worker
+  tasks:
+    
+    # We need the ec2 instance ids of the worker/pod nodes
+    - ec2_facts:
+
+- hosts: tag_krole_controller[0]
+  vars_files:
+    - vars/all.yml
+  tasks:
+
+    - include: vpc-facts.yml
+      delegate_to: "localhost"
+
+    # kube_node_facts is a custom bash (lol) ansible module that just runs
+    # kubectl get nodes --output=json and kicks it back as ansible_facts
+    - kube_node_facts:
+
+    #
+    # Create a route list
+    #
+
+    # First setup the route with the nat gateway that we are using
+    - set_fact: 
+        pod_routes: "[ { 'dest': '0.0.0.0/0', 'gateway_id': '{{ hostvars['localhost']['vpc_nat_gateway']['nat_gateway_id'] }}' } ]"
+
+    # Next, add each pod/worker's podCIDR as a route, pointing to the pod's ec2 instance id.
+    # This presumes the metadata.name is the same as the ansible hostname, which is probably a big assumption.
+    # But if the instance was provsioned with 01-infra... then it should be.
+    # FIXME: It seems that if using cloud-provider=aws then k8s will do this for you...to be explored
+    - set_fact:
+        pod_routes: "{{ pod_routes }} + [ {'dest': '{{ item.spec.podCIDR }}', 'instance_id': '{{ hostvars[item.metadata.name].ansible_ec2_instance_id }}' } ]"
+      with_items: kube_nodes['items']
+
+    - debug:
+        var: pod_routes
+        verbosity: 2
+
+    # This is not idempotent, will create a new route table each time it's run.
+    # I believe there is a limit on the number of VPC routes, so it's possible to hit that limit.
+    - name: now that pods are up, set the route table to use them 
+      ec2_vpc_route_table:
+        vpc_id: "{{ vpc_network_id }}" 
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        region: "{{ aws_region }}"
+        subnets:
+          - "{{ vpc_private_subnet_id }}"
+        routes: "{{ pod_routes }}"
+      register: vpc_pod_route_table
+      delegate_to: "localhost"
+
+    - debug:
+        var: vpc_pod_route_table
+        verbosity: 2

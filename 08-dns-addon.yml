@@ -1,0 +1,17 @@
+---
+
+# FIXME: This is just running shell commands.
+- hosts: tag_krole_controller[0]
+  tasks:
+    - name: create skydns service
+      shell: kubectl create -f https://raw.githubusercontent.com/kelseyhightower/kubernetes-the-hard-way/master/skydns-svc.yaml
+
+    - name: check skydns service
+      shell: kubectl --namespace=kube-system get svc | grep "kube-dns"
+
+    - name: create skydns replication controller
+      shell: kubectl create -f https://raw.githubusercontent.com/kelseyhightower/kubernetes-the-hard-way/master/skydns-rc.yaml
+
+    - name: check skydns replication controller
+      shell: kubectl --namespace=kube-system get pods | grep "kube-dns"
+

@@ -1,0 +1,64 @@
+---
+
+- hosts: tag_krole_controller
+  tasks:
+    - ec2_facts:
+
+- hosts: localhost
+  connection: local
+  vars_files:
+    - vars/all.yml
+  tasks:
+
+    - ec2_facts:
+
+    - include: vpc-facts.yml
+
+    - set_fact:
+        controller_instance_ids: "[]"
+
+    - debug:
+        msg: "{{ hostvars[item].ansible_ec2_instance_id }}"
+        verbosity: 2
+      with_items: "{{ groups.tag_krole_controller }}"
+
+    # Build the controller_instance_ids list
+    - set_fact:
+        controller_instance_ids: "{{ controller_instance_ids }} + [ '{{ hostvars[item].ansible_ec2_instance_id }}' ]"
+      with_items: "{{ groups.tag_krole_controller }}"
+
+    - debug:
+        var: controller_instance_ids
+        verbosity: 2
+
+    # This is just for the kubernetes API.
+    - name: create k8s api loadbalancer
+      ec2_elb_lb:
+        name: "k8s-api-lb"
+        state: "present"
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        region: "{{ aws_region }}"
+        #NOTE: For some reason this won't take a list of ids in the normal way 
+        security_group_ids: "{{ vpc_default_security_group_id }},{{ vpc_security_group_id }}"
+        subnets:
+          # Note that this has to be on a subnet that can get an external ip; won't work on a private subnet.
+          - "{{ vpc_public_subnet_id }}"
+        listeners:
+          # Using tcp b/c the backend is ssl/tls enabled, but don't want to configure a certificate in aws at this time
+          - protocol: tcp 
+            load_balancer_port: 443 
+            instance_port: 6443 
+        health_check:
+          ping_protocol: http 
+          ping_port: 8080
+          ping_path: "/healthz"
+          response_timeout: 3
+          interval: 5
+          unhealthy_threshold: 2
+          healthy_threshold: 2
+        instance_ids: "{{ controller_instance_ids }}"
+      register: k8s_api_loadbalancer
+
+    - debug:
+        var: k8s_api_loadbalancer

@@ -1,0 +1,4 @@
+#cloud-config
+ 
+# Set the hostname and FQDN
+hostname: "{{ item.krole }}{{ item.index }}"

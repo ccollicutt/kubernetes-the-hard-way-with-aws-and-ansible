@@ -1,0 +1,2 @@
+[localhost]
+localhost ansible_python_interpreter=/usr/bin/python ansible_ssh_host=127.0.0.1
