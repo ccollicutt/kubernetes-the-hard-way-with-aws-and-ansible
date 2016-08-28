@@ -2,7 +2,7 @@
 
 This implements [Kubernetes the hard way](https://github.com/kelseyhightower/kubernetes-the-hard-way) (KtHW) but with two major differences: 1) it uses Ansible and 2) it's deployed on AWS instead of Google Compute Engine. Basically it mimics the manual steps of KtHW in simple Ansible playbooks. No roles are used, as it is more of a serial procedure in terms of being an example of installing Kubernetes. This is really for learning about AWS and Kubernetes, not for creating any kind of production system. :)
 
-As a thank you, I want to note that I  would have had difficulty doing this in AWS without [Kubernetes the hard way AWS](https://github.com/ivx/kubernetes-the-hard-way-aws), which takes the KtHW and modifies it to use the AWS CLI.
+As a thank you, I want to note that I  would have had difficulty doing this in AWS without [Kubernetes the hard way AWS](https://github.com/ivx/kubernetes-the-hard-way-aws), which takes KtHW and modifies it to use the AWS CLI.
 
 There are several "edge cases" I ran into during the development of this series of playbooks, especially around using AWS and Ansible. Over time I hope to clear out these edge cases. Even in something simple like this set of playbooks there is much to be improved.
 
