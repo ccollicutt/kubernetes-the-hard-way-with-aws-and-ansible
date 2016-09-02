@@ -26,9 +26,11 @@
         group: 
           - "default"
           - "{{ vpc_security_group_name }}"
+        instance_profile_name: "{{ iam_master_role }}"
         instance_tags:
           krole: "{{ item.krole }}"
           Name: "{{ item.krole }}{{ item.index }}"
+          KubernetesCluster: "{{ k8s_cluster_name }}"
       with_items: "{{ k8s_instances }}"
       when: "item.public_ip == True"
 
@@ -48,8 +50,10 @@
         group: 
           - "default"
           - "{{ vpc_security_group_name }}"
+        instance_profile_name: "{{ iam_master_role }}"
         instance_tags:
           krole: "{{ item.krole }}"
           Name: "{{ item.krole }}{{ item.index }}"
+          KubernetesCluster: "{{ k8s_cluster_name }}"
       with_items: "{{ k8s_instances }}"
       when: "item.public_ip == False"

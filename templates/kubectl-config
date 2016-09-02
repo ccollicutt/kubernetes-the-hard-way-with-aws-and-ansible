@@ -2,7 +2,7 @@ apiVersion: v1
 clusters:
 - cluster:
     insecure-skip-tls-verify: true
-    server: https://k8s-api-lb-2092673706.us-east-1.elb.amazonaws.com
+    server: https://{{ k8s_api_lb.dns_name }}
   name: kubernetes-the-hard-way
 contexts:
 - context:

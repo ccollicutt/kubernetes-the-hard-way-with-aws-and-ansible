@@ -105,13 +105,18 @@
     aws_secret_key: "{{ aws_secret_key }}"
     region: "{{ aws_region }}"
     rules:
+      # Allow port 80 for k8s deployments/services 
+      # FIXME: should be a different security group
+      - proto: tcp 
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
       # Allow ssh to util node
       - proto: tcp 
         from_port: 22
         to_port: 22
         cidr_ip: 0.0.0.0/0
       # 443 to k8s api loadbalancer
-      # FIXME: This should probably be a separate rule...
       - proto: tcp
         from_port: 443
         to_port: 443
@@ -123,9 +128,22 @@
         cidr_ip: 0.0.0.0/0
   register: ec2_group_k8s_allow 
 
+
 - debug:
     var: ec2_group_k8s_allow 
     verbosity: 2
 
 - set_fact:
     vpc_security_group_id: "{{ ec2_group_k8s_allow.group_id }}"
+
+# Since ec2_group does not seem to support tags, we have to add 
+# it in a second step using ec2_tag. Without this it won't know
+# what security group to assign to the ELB.
+- name: tag k8s ec2 security group with KubernetesCluster name
+  ec2_tag:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    resource: "{{ vpc_security_group_id }}"
+    state: present
+    tags: { KubernetesCluster: "{{ k8s_cluster_name }}" }

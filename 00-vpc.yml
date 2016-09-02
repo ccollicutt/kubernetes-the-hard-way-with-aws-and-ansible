@@ -5,6 +5,9 @@
   vars_files:
     - vars/all.yml
   tasks:
+
+    - debug: 
+        msg: "AWS region - {{ aws_region }}, AZ - {{ vpc_subnet_az }}"
   
     - name: create an AWS VPC for use with kubernetes
       ec2_vpc:
@@ -13,16 +16,16 @@
         aws_secret_key: "{{ aws_secret_key }}"
         region: "{{ aws_region }}"
         cidr_block: "{{ vpc_network_cidr }}"
-        resource_tags: { "Name" : "kubernetes" }
+        resource_tags: { "Name": "kubernetes", "KubernetesCluster": "{{ k8s_cluster_name }}" }
         internet_gateway: True
         wait: True
         subnets:
           - cidr: "{{ vpc_public_subnet_cidr }}" 
             az: "{{ vpc_subnet_az }}"
-            resource_tags: { "Name" : "{{ vpc_public_subnet_name }}" }
+            resource_tags: { "Name" : "{{ vpc_public_subnet_name }}", "KubernetesCluster": "{{ k8s_cluster_name }}" }
           - cidr: "{{ vpc_private_subnet_cidr }}" 
             az: "{{ vpc_subnet_az }}"
-            resource_tags: { "Name" : "{{ vpc_private_subnet_name }}" }
+            resource_tags: { "Name" : "{{ vpc_private_subnet_name }}", "KubernetesCluster": "{{ k8s_cluster_name }}" }
         route_tables:
           - subnets:
               - "{{ vpc_public_subnet_cidr }}" 
@@ -51,6 +54,7 @@
           - dest: 0.0.0.0/0
             gateway_id: "{{ vpc_nat_gateway.nat_gateway_id }}"
             instance_id: "{{ vpc_nat_gateway.nat_gateway_id }}"
+        resource_tags: { "KubernetesCluster": "{{ k8s_cluster_name }}" }
       register: vpc_nat_route_table
 
     - debug:

@@ -8,12 +8,32 @@
 
     - include: common-kubectl.yml
 
+    - name: gather ec2_elb_facts
+      ec2_elb_facts:
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        region: "{{ aws_region }}"
+        names:
+          - "k8s-api-lb"
+      register: elb_facts 
+      delegate_to: "localhost"
+
+    - set_fact:
+        k8s_api_lb: "{{ elb_facts['elbs'][0] }}" 
+
+    - debug:
+        var: k8s_api_lb
+
     - name: ensure user has a .kube directory
       file:
         path: "/home/ubuntu/.kube"
         state: "directory"
+        owner: "ubuntu"
+        group: "ubuntu"
 
     - name: install kubectl config file from template
       template:
         src: "templates/kubectl-config"
         dest: "/home/ubuntu/.kube/config"
+        owner: "ubuntu"
+        group: "ubuntu"

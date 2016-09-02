@@ -1,0 +1,28 @@
+---
+
+- hosts: localhost
+  connection: local
+  vars_files:
+    - vars/all.yml
+
+  tasks:
+
+    - name: create master iam role
+      iam:
+        iam_type: role
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        region: "{{ aws_region }}"
+        name: "{{ iam_master_role_name }}"
+        state: present
+
+    - name: create master iam role policy 
+      iam_policy:
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        region: "{{ aws_region }}"
+        iam_type: role
+        iam_name: "{{ iam_master_role_name }}"
+        policy_name: "{{ iam_master_policy_name }}"
+        state: present
+        policy_document: "files/kubernetes-master-policy.json"
