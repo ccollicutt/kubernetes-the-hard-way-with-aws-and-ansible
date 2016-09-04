@@ -18,9 +18,11 @@
         instance_type: "{{ instance_type }}"
         image: "{{ image }}"
         wait: True 
+        spot_price: "{{ spot_price }}"
+        spot_wait_timeout: "{{ spot_timeout }}"
         vpc_subnet_id: "{{ vpc_public_subnet_id }}"
         assign_public_ip: "{{ item.public_ip }}"
-        user_data: "{{ lookup('template', 'templates/user-data') }}"
+        user_data: "{{ lookup('template', 'templates/user-data-{{ item.krole }}') }}"
         #FIXME: eventually use a minion role as well, or better limit roles/policies
         source_dest_check: "{{ item.source_dest_check }}"
         group: 
@@ -42,9 +44,11 @@
         instance_type: "{{ instance_type }}"
         image: "{{ image }}"
         wait: True 
+        spot_price: "{{ spot_price }}"
+        spot_wait_timeout: "{{ spot_timeout }}"
         vpc_subnet_id: "{{ vpc_private_subnet_id }}"
         assign_public_ip: "{{ item.public_ip }}"
-        user_data: "{{ lookup('template', 'templates/user-data') }}"
+        user_data: "{{ lookup('template', 'templates/user-data-{{ item.krole }}') }}"
         #FIXME: eventually use a minion role as well, or better limit roles/policies
         source_dest_check: "{{ item.source_dest_check }}"
         group: 
