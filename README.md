@@ -21,6 +21,8 @@ There are several "edge cases" I ran into during the development of this series 
 
 ## Deploy Kubernetes
 
+NOTE: This uses spot instances by default.
+
 * [Cloud Infrastructure Provisioning](docs/01-infrastructure.md)
 * [Setting up a CA and TLS Cert Generation](docs/02-certificate-authority.md)
 * [Bootstrapping an H/A etcd cluster](docs/03-etcd.md)
@@ -30,6 +32,7 @@ There are several "edge cases" I ran into during the development of this series 
 * [Managing the Container Network Routes](docs/07-network.md)
 * [Deploying the Cluster DNS Add-on](docs/08-dns-addon.md)
 * [Smoke Test](docs/09-smoke-test.md)
+* [Cleaning Up](docs/10-cleanup.md)
 
 ## Inventory File
 
@@ -43,4 +46,27 @@ Once the instances have been provisioned there is a playbook to create a local s
 
 ## Future Work
 
+* DONE: use_spots variable to turn on/off using spot instances
+* Create an ssh key for use with AWS
+* Some interesting work done [here](https://github.com/opencredo/k8s-terraform-ansible-sample)
+* Create k8 "deployments" using an Ansible module instead of running from shell commands (eg. the nginx smoketest)
+* DONE: Move ensuring python2 into user-data?
+* Use roles
+* Better DNS integration
+* Deletion playbook to remove everything
+
+### Better AWS Integration
+
 The Kubernetes that is deployed by this repository is not all that useful because it does not implement any configuration to allow loadbalancing for deployments within Kubernetes. KtHW does not include that either. However, Kubernetes certainly can be configured with IAM roles and permissions to create AWS loadbalancers when a deployment is pushed, it's just that this series of playbooks does not currently setup that configuration.
+
+* Stateful block storage with EBS
+* DONE: K8s to create loadbalancers for deployments
+* Autoscaling
+* DONE: Pod routes being automatically added
+
+Most of what Kubernetes does in AWS is [documented](https://github.com/kubernetes/kubernetes/blob/master/docs/design/aws_under_the_hood.md).
+
+### Security
+
+* Not running things as root
+* Verify all binary downloads

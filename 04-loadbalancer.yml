@@ -62,3 +62,4 @@
 
     - debug:
         var: k8s_api_loadbalancer
+        verbosity: 2

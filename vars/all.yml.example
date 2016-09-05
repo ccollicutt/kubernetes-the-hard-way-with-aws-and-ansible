@@ -1,9 +1,14 @@
 ---
 
+k8s_cluster_name: "kluster1"
+
 instance_type: "c3.large"
-key_name: "your-ec2-key-name"
-# Ubuntu 16.04 Xenial in us-east-1, change if you want or are using another region
-image: "ami-cf68e0d8"
+key_name: "CHANGEME"
+# Ubuntu 16.04 Xenial in us-west-1 / expect instance store!
+image: "ami-52aee332"
+spot_price: "0.03"
+spot_timeout: "300"
+use_spots: True
 
 # 
 # Subnets
@@ -20,7 +25,7 @@ vpc_private_subnet_cidr: "172.20.1.0/24"
 
 vpc_network_name: "kubernetes"
 vpc_network_cidr: "172.20.0.0/16"
-vpc_subnet_az: "us-east-1c"
+vpc_subnet_az: "CHANGEME"
 vpc_security_group_name: "allow_k8s"
 
 #
@@ -32,21 +37,80 @@ aws_secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
 aws_region: "{{ lookup('env','AWS_REGION') }}"
 
 #
+# IAM Roles
+#
+
+iam_master_role: "k8s-master-role"
+iam_master_policy: "k8s-master-policy"
+iam_worker_role: "k8s-worker-role"
+iam_worker_policy: "k8s-worker-policy"
+
+#
 # Instances
 #
 
 # NOTE: NAT instances, or any instance that has other IPs associated, has to have
 #       source_dest_check set to false. This is a bit of a pain.
 
+# FIXME: etcd prob doesn't need any special iam role
 k8s_instances:
-  - { index: 0, krole: "util", public_ip: True, source_dest_check: True }
-  - { index: 0, krole: "controller", public_ip: False, source_dest_check: True  }
-  - { index: 1, krole: "controller", public_ip: False, source_dest_check: True  }
-  - { index: 2, krole: "controller", public_ip: False, source_dest_check: True  }
-  - { index: 0, krole: "etcd", public_ip: False, source_dest_check: True  }
-  - { index: 1, krole: "etcd", public_ip: False, source_dest_check: True  }
-  - { index: 2, krole: "etcd", public_ip: False, source_dest_check: True  }
-  - { index: 0, krole: "worker", public_ip: False, source_dest_check: False }
-  - { index: 1, krole: "worker", public_ip: False, source_dest_check: False }
-  - { index: 2, krole: "worker", public_ip: False, source_dest_check: False }
-
+  -
+    index: 0
+    krole: "util"
+    public_ip: True
+    source_dest_check: True
+    iam_role: "{{ iam_master_role }}"
+  -
+    index: 0
+    krole: "controller"
+    public_ip: False
+    source_dest_check: True
+    iam_role: "{{ iam_master_role }}"
+  -
+    index: 1
+    krole: "controller"
+    public_ip: False
+    source_dest_check: True
+    iam_role: "{{ iam_master_role }}"
+  -
+    index: 2
+    krole: "controller"
+    public_ip: False
+    source_dest_check: True
+    iam_role: "{{ iam_master_role }}"
+  -
+    index: 0
+    krole: "etcd"
+    public_ip: False
+    source_dest_check: True
+    iam_role: "{{ iam_worker_role }}"
+  -
+    index: 1
+    krole: "etcd"
+    public_ip: False
+    source_dest_check: True
+    iam_role: "{{ iam_worker_role }}"
+  -
+    index: 2
+    krole: "etcd"
+    public_ip: False
+    source_dest_check: True
+    iam_role: "{{ iam_worker_role }}"
+  -
+    index: 0
+    krole: "worker"
+    public_ip: False
+    source_dest_check: False
+    iam_role: "{{ iam_worker_role }}"
+  -
+    index: 1
+    krole: "worker"
+    public_ip: False
+    source_dest_check: False
+    iam_role: "{{ iam_worker_role }}"
+  -
+    index: 2
+    krole: "worker"
+    public_ip: False
+    source_dest_check: False
+    iam_role: "{{ iam_worker_role }}"

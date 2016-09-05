@@ -91,8 +91,18 @@ $ vi vars/all.yml
 ```
 
 1. Set the right *key_name* variable.
-1. Ensure the variable *image* is the right one for the region you are using. These playbooks expect Ubuntu 16.04/Xenial.
+1. Ensure the variable *image* is the right one for the region you are using. These playbooks expect Ubuntu 16.04/Xenial and probably nodes with local disk.
 1. Please note the *aws_* key and region variables which are using environment lookups. Ensure that those enviroment variables are set in your current shell session, or perhaps enter those keys directly into the all.yml file.
+
+## Create IAM Roles and Policies
+
+Because Kubernetes can add AWS load balancers, setup route tables, add security groups, and otherwise alter AWS, we need to provide it with permissions to do that.
+
+```
+$ ansible-playbook 00-iam.yml
+```
+
+This will create a master and worker role/policy. Instances will be assigned one of the two roles.
 
 ## Create a Custom Network
 
@@ -103,6 +113,11 @@ $ ansible-playbook 00-vpc.yml
 ```
 
 ### Create Instances
+
+Please note that by default *spot instances* will be used, which you would probably not want to do in production. But for testing they can be 80% cheaper.
+
+If you don't want to use spot instances, set *use_spots* to false in *vars/all.yml*.
+
 
 ```
 $ ansible-playbook 01-infrastructure.yml
@@ -120,10 +135,6 @@ $ ansible-playbook 01-localhost-ssh-config.yml
 
 Once this playbook completes there will be a *./ssh_config file.
 
-### Ensure Instances Have Python 2 
+## ZFS
 
-As we're using Ubuntu Xenial, some AMIs might not have Python 2 installed, and we need to make sure that it's there. If your image has Python 2 already then you don't need to run this.
-
-```
-$ ansible-playbook 01-python2.yml
-```
+Please note the user-data file for the worker nodes installs and configures ZFS for use with Docker. This may not may not be what you want.
