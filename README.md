@@ -47,22 +47,23 @@ Once the instances have been provisioned there is a playbook to create a local s
 ## Future Work
 
 * DONE: use_spots variable to turn on/off using spot instances
+* DONE: Move ensuring python2 into user-data?
 * Create an ssh key for use with AWS
 * Some interesting work done [here](https://github.com/opencredo/k8s-terraform-ansible-sample)
 * Create k8 "deployments" using an Ansible module instead of running from shell commands (eg. the nginx smoketest)
-* DONE: Move ensuring python2 into user-data?
 * Use roles
 * Better DNS integration
 * Deletion playbook to remove everything
+* Better understanding of availability zones
 
-### Better AWS Integration
+### (Better) AWS Integration
 
-The Kubernetes that is deployed by this repository is not all that useful because it does not implement any configuration to allow loadbalancing for deployments within Kubernetes. KtHW does not include that either. However, Kubernetes certainly can be configured with IAM roles and permissions to create AWS loadbalancers when a deployment is pushed, it's just that this series of playbooks does not currently setup that configuration.
+Currently this repository will setup Kubernetes so that it can add pod routes to the VPC route table and setup elastic load balancers. There are other AWS integrations that still need to be completed. But in general the Kubernetes deployed by this repository will be useful because it will automatically setup EC2 load balancers.
 
-* Stateful block storage with EBS
 * DONE: K8s to create loadbalancers for deployments
-* Autoscaling
 * DONE: Pod routes being automatically added
+* Autoscaling
+* Stateful block storage with EBS
 
 Most of what Kubernetes does in AWS is [documented](https://github.com/kubernetes/kubernetes/blob/master/docs/design/aws_under_the_hood.md).
 

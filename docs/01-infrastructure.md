@@ -93,6 +93,7 @@ $ vi vars/all.yml
 1. Set the right *key_name* variable.
 1. Ensure the variable *image* is the right one for the region you are using. These playbooks expect Ubuntu 16.04/Xenial and probably nodes with local disk.
 1. Please note the *aws_* key and region variables which are using environment lookups. Ensure that those enviroment variables are set in your current shell session, or perhaps enter those keys directly into the all.yml file.
+1. Set the *vpc_subnet_az* to the right availability zone
 
 ## Create IAM Roles and Policies
 
