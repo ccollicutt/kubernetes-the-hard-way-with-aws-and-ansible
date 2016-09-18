@@ -21,7 +21,7 @@
     - name: provision NORMAL kubernetes publically available virtual machines in AWS
       ec2:
         region: "{{ aws_region }}"
-        key_name: "{{ key_name }}"
+        key_name: "{{ ec2_key_name }}"
         instance_type: "{{ instance_type }}"
         image: "{{ image }}"
         wait: True 
@@ -46,7 +46,7 @@
     - name: provision SPOT INSTANCES for kubernetes publically available virtual machines in AWS
       ec2:
         region: "{{ aws_region }}"
-        key_name: "{{ key_name }}"
+        key_name: "{{ ec2_key_name }}"
         instance_type: "{{ instance_type }}"
         image: "{{ image }}"
         wait: True
@@ -77,7 +77,7 @@
     - name: provision NORMAL kubernetes private virtual machines in AWS
       ec2:
         region: "{{ aws_region }}"
-        key_name: "{{ key_name }}"
+        key_name: "{{ ec2_key_name }}"
         instance_type: "{{ instance_type }}"
         image: "{{ image }}"
         wait: True 
@@ -102,7 +102,7 @@
     - name: provision SPOT INSTANCES for kubernetes private virtual machines in AWS
       ec2:
         region: "{{ aws_region }}"
-        key_name: "{{ key_name }}"
+        key_name: "{{ ec2_key_name }}"
         instance_type: "{{ instance_type }}"
         image: "{{ image }}"
         wait: True 
