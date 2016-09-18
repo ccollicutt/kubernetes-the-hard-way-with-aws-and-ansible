@@ -39,7 +39,9 @@
           Name: "{{ item.krole }}{{ item.index }}"
           KubernetesCluster: "{{ k8s_cluster_name }}"
       with_items: "{{ k8s_instances }}"
-      when: item.public_ip == True and use_spots == False
+      when: item.public_ip == True and 
+            use_spots == False and 
+            "{{ item.krole }}{{ item.index }}" not in groups['all']
 
     - name: provision SPOT INSTANCES for kubernetes publically available virtual machines in AWS
       ec2:
@@ -64,7 +66,9 @@
           Name: "{{ item.krole }}{{ item.index }}"
           KubernetesCluster: "{{ k8s_cluster_name }}"
       with_items: "{{ k8s_instances }}"
-      when: item.public_ip == True and use_spots == True
+      when: item.public_ip == True and 
+            use_spots == True and 
+            "{{ item.krole }}{{ item.index }}" not in groups['all']
 
     #
     # Create controller instances in the private subnet
@@ -90,7 +94,9 @@
           Name: "{{ item.krole }}{{ item.index }}"
           KubernetesCluster: "{{ k8s_cluster_name }}"
       with_items: "{{ k8s_instances }}"
-      when: item.public_ip == False and use_spots == False
+      when: item.public_ip == False and 
+            use_spots == False and 
+            "{{ item.krole }}{{ item.index }}" not in groups['all']
 
     # If spot instances is yes then create spot instances
     - name: provision SPOT INSTANCES for kubernetes private virtual machines in AWS
@@ -115,4 +121,6 @@
           Name: "{{ item.krole }}{{ item.index }}"
           KubernetesCluster: "{{ k8s_cluster_name }}"
       with_items: "{{ k8s_instances }}"
-      when: item.public_ip == False and use_spots == True
+      when: item.public_ip == False and 
+            use_spots == True and 
+            "{{ item.krole }}{{ item.index }}" not in groups['all']
