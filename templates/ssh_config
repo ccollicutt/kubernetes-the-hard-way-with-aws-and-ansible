@@ -1,0 +1,26 @@
+ForwardAgent yes 
+PubkeyAcceptedKeyTypes=+ssh-dss
+StrictHostKeyChecking no
+UserKnownHostsFile=/dev/null
+
+# Note the "ssh -F ssh_config" in the proxy command. Without 
+# that the proxy command will acctually use the regular 
+# ~/.ssh/config file which will not know about the util0 node.
+# lol.
+
+host util0
+    User ubuntu
+    Hostname {{ hostvars["util0"].ansible_ssh_host }}
+
+{% for h in groups['all'] -%}
+{% if h != "localhost" and h != "util0" -%}
+{% set ip = hostvars[h].ansible_ssh_host -%}
+host {{ hostvars[h].inventory_hostname }}
+    User ubuntu
+    ProxyCommand ssh -F ssh_config util0 -W {{ ip }}:22
+{# ansible uses the IP address darnit #}
+host {{ ip }}
+    User ubuntu
+    ProxyCommand ssh -F ssh_config util0 -W {{ ip }}:22
+{% endif %}
+{% endfor %}
