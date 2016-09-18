@@ -138,4 +138,4 @@ Once this playbook completes there will be a *./ssh_config file.
 
 ## ZFS
 
-Please note the user-data file for the worker nodes installs and configures ZFS for use with Docker. This may not may not be what you want.
+Please note the user-data file for the worker nodes installs and configures ZFS for use with Docker. This may not be what you want.
