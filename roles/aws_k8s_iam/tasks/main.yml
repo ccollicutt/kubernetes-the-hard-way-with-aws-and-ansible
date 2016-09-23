@@ -1,0 +1,7 @@
+---
+
+- include: install.yml
+  when: aws_k8s_iam_remove | default(False) | bool == False
+
+- include: remove.yml
+  when: aws_k8s_iam_remove | default(False) | bool == True

@@ -3,7 +3,7 @@
 k8s_cluster_name: "kluster1"
 
 instance_type: "c3.large"
-key_name: "CHANGEME"
+ec2_key_name: "CHANGEME"
 # Ubuntu 16.04 Xenial in us-west-1 / expect instance store!
 image: "ami-52aee332"
 spot_price: "0.03"

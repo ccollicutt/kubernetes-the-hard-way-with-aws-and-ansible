@@ -1,0 +1,33 @@
+---
+
+- name: remove worker iam role policy
+  iam_policy:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    iam_type: role
+    iam_name: "{{ iam_worker_role }}"
+    policy_name: "{{ iam_worker_policy }}"
+    state: absent
+
+- name: remove master iam role policy
+  iam_policy:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    iam_type: role
+    iam_name: "{{ iam_master_role }}"
+    policy_name: "{{ iam_master_policy }}"
+    state: absent
+
+- name: remove iam roles
+  iam:
+    iam_type: role
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ iam_master_role }}"
+    - "{{ iam_worker_role }}"
