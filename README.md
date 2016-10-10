@@ -1,3 +1,5 @@
+Please note that this repository is frozen, but work is continuing in [sk8ts](https://github.com/sk8ts).
+
 # Kubernetes the Hard Way in AWS with Ansible
 
 This implements [Kubernetes the hard way](https://github.com/kelseyhightower/kubernetes-the-hard-way) (KtHW) but with two major differences: 1) it uses Ansible and 2) it's deployed on AWS instead of Google Compute Engine. Basically it mimics the manual steps of KtHW in simple Ansible playbooks. No roles are used, as it is more of a serial procedure in terms of being an example of installing Kubernetes. This is really for learning about AWS and Kubernetes, not for creating any kind of production system. :)
